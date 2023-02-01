@@ -6,8 +6,19 @@ import (
 	"sync"
 )
 
+type StreamMsgHandler interface {
+	handleSetChunkSizeMessage(stream *Stream) error
+	handleCommandMessageAMF0(stream *Stream) error
+	handleCommandMessageAMF3(stream *Stream) error
+	handleDataMessageAMF0(stream *Stream) error
+	handleDataMessageAMF3(stream *Stream) error
+	handleAcknowledgeMessage(stream *Stream) error
+	handleUserControlMessage(stream *Stream) error
+}
+
 type ServerSession struct {
-	hs   HandshakeServer
+	hs   *HandshakeServer
+	ch   *ChunkHandler
 	conn net.Conn
 
 	closeOnce sync.Once
@@ -15,7 +26,8 @@ type ServerSession struct {
 
 func NewServerSession(conn net.Conn) *ServerSession {
 	return &ServerSession{
-		hs:   HandshakeServer{},
+		hs:   &HandshakeServer{},
+		ch:   NewChunkHandler(),
 		conn: conn,
 	}
 }
@@ -25,8 +37,9 @@ func (s *ServerSession) StartLoop() error {
 		s.close(err)
 		return err
 	}
-	//todo: 处理后续rtmp消息
-	return nil
+	err := s.ch.StartLoop(s.conn, s.msgHandler)
+	s.close(err)
+	return err
 }
 
 func (s *ServerSession) handshake() error {
@@ -42,6 +55,32 @@ func (s *ServerSession) handshake() error {
 	return nil
 }
 
+func (s *ServerSession) msgHandler(stream *Stream) error {
+	switch stream.header.MsgTypeId {
+	case SetChunkSizeMessage:
+		return s.handleSetChunkSizeMessage(stream)
+	case CommandMessageAMF0:
+		return s.handleCommandMessageAMF0(stream)
+	case CommandMessageAMF3:
+		return s.handleCommandMessageAMF3(stream)
+	case DataMessageAMF0:
+		return s.handleDataMessageAMF0(stream)
+	case DataMessageAMF3:
+		return s.handleDataMessageAMF3(stream)
+	case AcknowledgementMessage:
+		return s.handleAcknowledgeMessage(stream)
+	case UserControlMessage:
+		return s.handleUserControlMessage(stream)
+	case AudioMessage:
+		fallthrough
+	case VideoMessage:
+		//todo: 处理rtmp音视频数据
+	default:
+		//todo: log 未知类型
+	}
+	return nil
+}
+
 func (s *ServerSession) close(err error) {
 	s.closeOnce.Do(func() {
 		if err != nil {
@@ -52,4 +91,41 @@ func (s *ServerSession) close(err error) {
 			_ = s.conn.Close()
 		}
 	})
+}
+
+//-------- implement of StreamMsgHandler interface ---------
+
+func (s *ServerSession) handleSetChunkSizeMessage(stream *Stream) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *ServerSession) handleCommandMessageAMF0(stream *Stream) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *ServerSession) handleCommandMessageAMF3(stream *Stream) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *ServerSession) handleDataMessageAMF0(stream *Stream) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *ServerSession) handleDataMessageAMF3(stream *Stream) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *ServerSession) handleAcknowledgeMessage(stream *Stream) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *ServerSession) handleUserControlMessage(stream *Stream) error {
+	//TODO implement me
+	panic("implement me")
 }
