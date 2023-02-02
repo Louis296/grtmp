@@ -23,7 +23,7 @@ const (
 
 	// UserControlMessage
 	//
-	// 6.1.2 Message Payload
+	// 6.2. User Control Messages
 	UserControlMessage uint8 = 4
 
 	// CommandMessageAMF0

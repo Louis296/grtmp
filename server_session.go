@@ -1,6 +1,7 @@
 package grtmp
 
 import (
+	"encoding/binary"
 	"fmt"
 	"net"
 	"sync"
@@ -96,8 +97,14 @@ func (s *ServerSession) close(err error) {
 //-------- implement of StreamMsgHandler interface ---------
 
 func (s *ServerSession) handleSetChunkSizeMessage(stream *Stream) error {
-	//TODO implement me
-	panic("implement me")
+	size := binary.BigEndian.Uint32(stream.msg.Bytes())
+	// 5.4.1. Valid sizes are 1 to 2147483647 (0x7FFFFFFF) inclusive
+	if size >= 1 && size <= 0x7FFFFFFF {
+		s.ch.setChunkSize(size)
+	} else {
+		// 违法 chunk size，正常情况下不会执行到此处，处理方式待定
+	}
+	return nil
 }
 
 func (s *ServerSession) handleCommandMessageAMF0(stream *Stream) error {
