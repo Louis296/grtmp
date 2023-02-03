@@ -2,7 +2,6 @@ package grtmp
 
 import (
 	"encoding/binary"
-	"fmt"
 	"net"
 	"sync"
 )
@@ -33,14 +32,14 @@ func NewServerSession(conn net.Conn) *ServerSession {
 	}
 }
 
-func (s *ServerSession) StartLoop() error {
+func (s *ServerSession) StartLoop() {
 	if err := s.handshake(); err != nil {
 		s.close(err)
-		return err
+		return
 	}
 	err := s.ch.StartLoop(s.conn, s.msgHandler)
 	s.close(err)
-	return err
+	return
 }
 
 func (s *ServerSession) handshake() error {
@@ -77,7 +76,8 @@ func (s *ServerSession) msgHandler(stream *Stream) error {
 	case VideoMessage:
 		//todo: 处理rtmp音视频数据
 	default:
-		//todo: log 未知类型
+		// 未知消息类型
+		logger.Warn("unknown rtmp message type, type id = %v", stream.header.MsgTypeId)
 	}
 	return nil
 }
@@ -85,8 +85,7 @@ func (s *ServerSession) msgHandler(stream *Stream) error {
 func (s *ServerSession) close(err error) {
 	s.closeOnce.Do(func() {
 		if err != nil {
-			//todo: log
-			fmt.Printf("rtmp session close, err = %v \n", err)
+			logger.Warn("rtmp session close, err = %v", err)
 		}
 		if s.conn != nil {
 			_ = s.conn.Close()
@@ -103,6 +102,7 @@ func (s *ServerSession) handleSetChunkSizeMessage(stream *Stream) error {
 		s.ch.setChunkSize(size)
 	} else {
 		// 违法 chunk size，正常情况下不会执行到此处，处理方式待定
+		logger.Error("illegal chunk size %v", size)
 	}
 	return nil
 }

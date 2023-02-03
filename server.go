@@ -21,6 +21,7 @@ func Listen(addr string) (*Server, error) {
 }
 
 func (s *Server) Serve() error {
+	logger.Info("grtmp server listening addr %v", s.addr)
 	for {
 		conn, err := s.ln.Accept()
 		if err != nil {
@@ -32,5 +33,5 @@ func (s *Server) Serve() error {
 
 func handleConn(conn net.Conn) {
 	session := NewServerSession(conn)
-	_ = session.StartLoop()
+	session.StartLoop()
 }
